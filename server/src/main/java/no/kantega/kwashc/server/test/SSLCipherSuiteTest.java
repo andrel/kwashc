@@ -18,26 +18,11 @@ package no.kantega.kwashc.server.test;
 
 import no.kantega.kwashc.server.model.Site;
 import no.kantega.kwashc.server.model.TestResult;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.conn.scheme.Scheme;
-import org.apache.http.conn.ssl.SSLSocketFactory;
-import org.apache.http.params.BasicHttpParams;
-import org.apache.http.params.CoreConnectionPNames;
-import org.apache.http.params.HttpParams;
 
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSocket;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
+import javax.net.ssl.SSLHandshakeException;
 import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.net.URL;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
 
 
 /**
@@ -83,14 +68,15 @@ import java.security.cert.X509Certificate;
  * <p/>
  * http://wiki.eclipse.org/Jetty/Howto/CipherSuites
  * http://www.techstacks.com/howto/j2se5_ssl_cipher_strength.html
+ * https://hc.apache.org/httpcomponents-client-ga/httpclient/examples/org/apache/http/examples/client/ClientCustomSSL.java
  * http://cephas.net/blog/2007/10/02/using-a-custom-socket-factory-with-httpclient/
  * https://blogs.oracle.com/java-platform-group/entry/java_8_will_use_tls
  * https://www.ssllabs.com/ssltest/viewClient.html?name=Java&version=8u31
- * server/cipher/*.txt: FUll list of ciphers supported by different Java versions.
+ * server/cipher/*.txt: Full list of ciphers supported by different Java versions.
  *
  * @author Espen A. Fossen, (www.kantega.no)
  */
-public class SSLCipherSuiteTest extends AbstractTest {
+public class SSLCipherSuiteTest extends AbstractSSLTest {
 
     @Override
     public String getName() {
@@ -121,8 +107,6 @@ public class SSLCipherSuiteTest extends AbstractTest {
             return testResult;
         }
 
-        HttpClient httpclient = HttpClientUtil.getHttpClient();
-
         try {
 
             String[] ciphers = new String[]{
@@ -144,9 +128,7 @@ public class SSLCipherSuiteTest extends AbstractTest {
                     "TLS_ECDH_RSA_WITH_RC4_128_SHA"
             };
 
-            HttpResponse response = checkClientForCiphers(site, httpsPort, httpclient, ciphers);
-
-            if (response.getStatusLine().getStatusCode() == 200) {
+            if (checkClient(site, httpsPort, new String[]{"TLSv1"}, ciphers) == 200) {
                 testResult.setPassed(false);
                 testResult.setMessage("Your application accepts weak/anonymous SSL/TLS cipher suites!");
             }
@@ -155,21 +137,18 @@ public class SSLCipherSuiteTest extends AbstractTest {
             return exitMissingCipherSuites(testResult);
         } catch (KeyManagementException e) {
             return exitIncorrectCertificate(testResult);
-        } catch (IOException e) {
-            if (e.getMessage().contains("peer not authenticated")) {
+        } catch (SSLHandshakeException e) {
+            if (e.getMessage().contains("No appropriate protocol (protocol is disabled or cipher suites are inappropriate)")) {
 
-                HttpClient httpclient2 = HttpClientUtil.getHttpClient();
                 try {
                     String[] ciphers = new String[]{
                             "TLS_DHE_DSS_WITH_AES_128_CBC_SHA",
                             "TLS_DHE_DSS_WITH_AES_128_CBC_SHA256",
                             "TLS_DHE_DSS_WITH_AES_128_GCM_SHA256",
                             "TLS_DHE_DSS_WITH_3DES_EDE_CBC_SHA"};
-                    HttpResponse response = checkClientForCiphers(site, httpsPort, httpclient2, ciphers);
 
-                    if (response.getStatusLine().getStatusCode() == 200) {
+                    if (checkClient(site, httpsPort, new String[]{"TLSv1"}, ciphers) == 200) {
 
-                        HttpClient httpclient3 = HttpClientUtil.getHttpClient();
                         try {
                             String[] ciphers2 = new String[]{
                                     "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256",
@@ -186,9 +165,7 @@ public class SSLCipherSuiteTest extends AbstractTest {
                                     "TLS_DHE_RSA_WITH_3DES_EDE_CBC_SHA"
                             };
 
-                            HttpResponse response2 = checkClientForCiphers(site, httpsPort, httpclient3, ciphers2);
-
-                            if (response2.getStatusLine().getStatusCode() == 200) {
+                            if (checkClient(site, httpsPort, new String[]{"TLSv1"}, ciphers2) == 200) {
                                 testResult.setPassed(true);
                                 testResult.setMessage("Top score, no weak/anonymous ciphers and supporting the best available Perfect Forward Secrecy ciphers are present.");
                             } else {
@@ -203,8 +180,6 @@ public class SSLCipherSuiteTest extends AbstractTest {
                             testResult.setPassed(false);
                             testResult.setMessage("Almost there, no weak/anonymous ciphers and allows Perfect Forward Secrecy, but some of your ciphers require DSA keys, which are effectively limited to 1024 bits!");
                             return testResult;
-                        } finally {
-                            httpclient3.getConnectionManager().shutdown();
                         }
                     } else {
                         exitWrongHttpCode(testResult);
@@ -218,8 +193,6 @@ public class SSLCipherSuiteTest extends AbstractTest {
                     testResult.setPassed(false);
                     testResult.setMessage("Looking better, your application does not allow SSL/TLS connection with anonymous/weak ciphers, but does not support Perfect Forward Secrecy!");
                     return testResult;
-                } finally {
-                    httpclient2.getConnectionManager().shutdown();
                 }
 
             } else {
@@ -227,7 +200,7 @@ public class SSLCipherSuiteTest extends AbstractTest {
                 testResult.setMessage("Actual testing failed, check that the connection is working!");
             }
         } finally {
-            httpclient.getConnectionManager().shutdown();
+
             setDuration(testResult, startTime);
         }
 
@@ -250,46 +223,5 @@ public class SSLCipherSuiteTest extends AbstractTest {
         testResult.setMessage("Cipher suites used for connection not available in local environment, contact tutor.");
         return testResult;
     }
-
-    private HttpResponse checkClientForCiphers(Site site, int httpsPort, HttpClient httpclient, String[] ciphers) throws NoSuchAlgorithmException, KeyManagementException, IOException {
-        SSLContext sslcontext = SSLContext.getInstance("TLS");
-        sslcontext.init(null, new TrustManager[]{allowAllTrustManager}, null);
-
-        SSLSocketFactory sf = new SSLSocketFactory(sslcontext, SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
-
-        HttpParams params = new BasicHttpParams();
-        params.setParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, 1000);
-        params.setParameter(CoreConnectionPNames.SO_TIMEOUT, 1000);
-
-        SSLSocket socket = (SSLSocket) sf.createSocket(params);
-        socket.setEnabledCipherSuites(ciphers);
-
-        URL url = new URL(site.getAddress());
-
-        InetSocketAddress address = new InetSocketAddress(url.getHost(), httpsPort);
-        sf.connectSocket(socket, address, null, params);
-
-        Scheme sch = new Scheme("https", httpsPort, sf);
-        httpclient.getConnectionManager().getSchemeRegistry().register(sch);
-
-        HttpGet request = new HttpGet("https://" + url.getHost() + ":" + site.getSecureport() + url.getPath() + "blog");
-
-        return httpclient.execute(request);
-    }
-
-    TrustManager allowAllTrustManager = new X509TrustManager() {
-
-
-        public void checkClientTrusted(X509Certificate[] chain, String authType) throws CertificateException {
-        }
-
-        public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {
-        }
-
-        public X509Certificate[] getAcceptedIssuers() {
-            return null;
-        }
-
-    };
 
 }

@@ -21,7 +21,8 @@ import no.kantega.kwashc.server.model.TestResult;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
 
 /**
@@ -51,7 +52,7 @@ public class InvalidatedRedirectTest extends AbstractTest {
 	@Override
     protected TestResult testSite(Site site, TestResult testResult) throws Throwable {
         long startTime = System.nanoTime();
-        DefaultHttpClient httpclient = new DefaultHttpClient();
+        CloseableHttpClient httpclient = HttpClientBuilder.create().build();
         String responseBody = "";
 
         try {
@@ -70,7 +71,7 @@ public class InvalidatedRedirectTest extends AbstractTest {
                 testResult.setMessage("Ok, your application validates redirects properly.");
             }
         } finally {
-            httpclient.getConnectionManager().shutdown();
+            httpclient.close();
         }
 
         setDuration(testResult, startTime);

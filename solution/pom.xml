@@ -24,7 +24,6 @@
 	</parent>
 	<modelVersion>4.0.0</modelVersion>
 
-	<groupId>no.kantega.kwashc</groupId>
 	<artifactId>solution</artifactId>
 	<packaging>pom</packaging>
 
@@ -58,7 +57,7 @@
 		<dependency>
 			<groupId>net.sourceforge.jwebunit</groupId>
 			<artifactId>jwebunit-htmlunit-plugin</artifactId>
-			<version>3.0</version>
+			<version>3.3-SNAPSHOT</version>
 			<scope>compile</scope>
 			<exclusions>
 				<exclusion>

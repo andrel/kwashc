@@ -24,7 +24,8 @@ import net.sourceforge.jwebunit.junit.WebTester;
 import no.kantega.kwashc.server.model.Site;
 import no.kantega.kwashc.server.model.TestResult;
 import org.apache.commons.codec.binary.Hex;
-import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 
 import java.net.URL;
 import java.nio.charset.Charset;
@@ -73,7 +74,7 @@ public class InsecureCryptographicStorageTest extends AbstractTest {
         final String originalUsernamePassword = "password";
         final String originalAnotherUserPassword = "guest";
 
-        DefaultHttpClient httpclient = new DefaultHttpClient();
+        CloseableHttpClient httpclient = HttpClientBuilder.create().build();
         String responseBody;
 
         try {
@@ -145,7 +146,7 @@ public class InsecureCryptographicStorageTest extends AbstractTest {
             }
 
         } finally {
-            httpclient.getConnectionManager().shutdown();
+            httpclient.close();
         }
 
         setDuration(testResult, startTime);
