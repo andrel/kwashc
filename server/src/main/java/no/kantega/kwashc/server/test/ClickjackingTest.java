@@ -37,7 +37,7 @@ import no.kantega.kwashc.server.model.TestResult;
  * @author Anders Båstrand, (www.kantega.no)
  * @author Espen A. Fossen, (www.kantega.no)
  */
-public class ClickjackingTest extends AbstractTest {
+public class ClickjackingTest extends AbstractCSPTest {
 
 	@Override
 	public String getName() {
@@ -63,17 +63,16 @@ public class ClickjackingTest extends AbstractTest {
 
 		tester.beginAt(site.getAddress());
 
-		String frameOptionsHeader = tester.getHeader("X-Frame-Options");
-		String contentSecurityPolicyHeader1 = tester.getHeader("Content-Security-Policy");
-		String contentSecurityPolicyHeader2 = tester.getHeader("X-Content-Security-Policy");
-		String contentSecurityPolicyHeader3 = tester.getHeader("X-WebKit-CSP");
-
+		String frameHeader = tester.getHeader(FRAME_OPTIONS);
+		String cspHeader1 = tester.getHeader(CSP1);
+		String cspHeader2 = tester.getHeader(CSP2);
+		String cspHeader3 = tester.getHeader(CSP3);
 
 		boolean deprecatedHeaderSolution = false;
 		boolean contentSecurityPolicySolution = false;
 		boolean javascriptSolution = false;
 
-		if (frameOptionsHeader != null && (frameOptionsHeader.equalsIgnoreCase("deny") || frameOptionsHeader.equalsIgnoreCase("sameorigin"))) {
+		if (frameHeader != null && (frameHeader.equalsIgnoreCase("deny") || frameHeader.equalsIgnoreCase("sameorigin"))) {
 			deprecatedHeaderSolution = true;
 		}
 
@@ -83,14 +82,14 @@ public class ClickjackingTest extends AbstractTest {
 			javascriptSolution = true;
 		}
 
-		if(checkContentSecurityPolicy(contentSecurityPolicyHeader1) || checkContentSecurityPolicy(contentSecurityPolicyHeader2) || checkContentSecurityPolicy(contentSecurityPolicyHeader3)){
+		if(checkContentSecurityPolicy(cspHeader1) || checkContentSecurityPolicy(cspHeader2) || checkContentSecurityPolicy(cspHeader3)){
 			contentSecurityPolicySolution = true;
 		}
 
 		try {
 			if (javascriptSolution && deprecatedHeaderSolution && contentSecurityPolicySolution) {
                 testResult.setPassed(true);
-                testResult.setMessage("You jumped out of the evil iframe, added an frame-ancestors directive in Content Security Policy (CSP) AND set an X-Frame-Options to '" + frameOptionsHeader + "'. Triple protection. Excellent!!");
+                testResult.setMessage("You jumped out of the evil iframe, added an frame-ancestors directive in Content Security Policy (CSP) AND set an X-Frame-Options to '" + frameHeader + "'. Triple protection. Excellent!!");
                 return testResult;
             } else if (javascriptSolution && contentSecurityPolicySolution) {
                 testResult.setPassed(true);
@@ -98,11 +97,11 @@ public class ClickjackingTest extends AbstractTest {
                 return testResult;
             } else if (contentSecurityPolicySolution && deprecatedHeaderSolution) {
                 testResult.setPassed(false);
-                testResult.setMessage("Good! You added an frame-ancestors directive in Content Security Policy (CSP), AND set an X-Frame-Options to '" + frameOptionsHeader + "'. But what if the user is using an old browser?");
+                testResult.setMessage("Good! You added an frame-ancestors directive in Content Security Policy (CSP), AND set an X-Frame-Options to '" + frameHeader + "'. But what if the user is using an old browser?");
                 return testResult;
             } else if (javascriptSolution && deprecatedHeaderSolution) {
                 testResult.setPassed(false);
-                testResult.setMessage("You jumped out of the evil iframe, AND set an X-Frame-Options to '" + frameOptionsHeader + "'. Unfortunately X-Frame-Options is deprecated, what about using some Content Security Policy (CSP)?");
+                testResult.setMessage("You jumped out of the evil iframe, AND set an X-Frame-Options to '" + frameHeader + "'. Unfortunately X-Frame-Options is deprecated, what about using some Content Security Policy (CSP)?");
                 return testResult;
             } else if (javascriptSolution) {
                 testResult.setPassed(false);
@@ -110,7 +109,7 @@ public class ClickjackingTest extends AbstractTest {
                 return testResult;
             } else if (deprecatedHeaderSolution) {
                 testResult.setPassed(false);
-                testResult.setMessage("Your on the right track. You have set X-Frame-Options to " + frameOptionsHeader + ". Unfortunately X-Frame-Options is deprecated, and what if the user is using an old browser?");
+                testResult.setMessage("Your on the right track. You have set X-Frame-Options to " + frameHeader + ". Unfortunately X-Frame-Options is deprecated, and what if the user is using an old browser?");
                 return testResult;
             } else if (contentSecurityPolicySolution) {
                 testResult.setPassed(true);
