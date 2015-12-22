@@ -57,7 +57,7 @@
 		<dependency>
 			<groupId>net.sourceforge.jwebunit</groupId>
 			<artifactId>jwebunit-htmlunit-plugin</artifactId>
-			<version>3.3-SNAPSHOT</version>
+			<version>3.3</version>
 			<scope>compile</scope>
 			<exclusions>
 				<exclusion>
