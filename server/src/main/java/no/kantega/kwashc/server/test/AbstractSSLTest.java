@@ -53,4 +53,10 @@ public abstract class AbstractSSLTest extends AbstractTest {
         }
     }
 
+    @Override
+    public TestCategory getTestCategory() {
+        return TestCategory.crypto;
+    }
+
+
 }
