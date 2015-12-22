@@ -103,8 +103,7 @@ public class SSLProtocolTest extends AbstractSSLTest {
             testResult.setMessage("Certificate configuration does not seem to be correct, check certificate on remote environment!");
             return testResult;
         } catch (SSLHandshakeException e) {
-            if (e.getMessage().contains("No appropriate protocol (protocol is disabled or cipher suites are inappropriate)")) {
-
+            if (e.getMessage().contains("No appropriate protocol (protocol is disabled or cipher suites are inappropriate)") || e.getMessage().contains("Received fatal alert: handshake_failure")) {
 
                 if (checkClient(site, httpsPort, new String[]{"TLSv1.2"}, null) == 200) {
                     testResult.setResultEnum(ResultEnum.passed);
