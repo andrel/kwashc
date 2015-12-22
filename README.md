@@ -1,5 +1,7 @@
 # Kantega Web Application Security Hero Challenge (KWASHC) #
 
+Status for master: [![Build Status](https://travis-ci.org/kantega/kwashc.svg?branch=master)](https://travis-ci.org/kantega/kwashc)
+
 ## About ##
 
 Developed for an in house training challenge for employees. The main goals with the challenge was to educate developers
@@ -42,12 +44,16 @@ Build and run server
 
         mvn clean install
         cd server
-        mvn jetty:run-forked
+        MAVEN_OPTS="-Djava.security.properties=jvm/java.security" mvn jetty:run
 
 Build and run client
 
         cd webapp
         mvn clean install jetty:run
+
+Run client with all protocols and ciphers enabled
+
+        MAVEN_OPTS="-Djava.security.properties=../server/jvm/java.security" mvn jetty:run
 
 
 Create Eclipse project with correct path for dependencies

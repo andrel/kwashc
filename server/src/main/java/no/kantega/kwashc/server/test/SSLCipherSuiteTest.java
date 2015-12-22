@@ -16,6 +16,7 @@
 
 package no.kantega.kwashc.server.test;
 
+import no.kantega.kwashc.server.model.ResultEnum;
 import no.kantega.kwashc.server.model.Site;
 import no.kantega.kwashc.server.model.TestResult;
 
@@ -87,17 +88,31 @@ public class SSLCipherSuiteTest extends AbstractSSLTest {
 
     @Override
     public String getName() {
-        return "SSL/TLS Connection Cipher Strength Test";
+        return "SSL/TLS Connection Cipher Strength";
     }
 
     @Override
     public String getDescription() {
-        return "Test if a weak Cipher is  allowed for an SSL/TLS connection.";
+        return DESCRIPTION_SECURE_COMMUNICATION + "<br><br> A cipher suite is a named combination of authentication, encryption" +
+                ", message authentication code (MAC) and key exchange algorithms used to negotiate the security settings" +
+                " in and SSL/TLS based communication. To ensure that the communication is secure it is important to only " +
+                "support strong and secure cipher suites. ";
     }
 
     @Override
     public String getInformationURL() {
         return "https://www.owasp.org/index.php/Transport_Layer_Protection_Cheat_Sheet";
+    }
+
+    @Override
+    public String getExploit(Site site) {
+        return null;
+    }
+
+    @Override
+    public String getHint() {
+        return "Create a blacklist of disabled SSL/TLS cipher suites using <excludeCipherSuites> in <configuration> of " +
+                "the jetty-maven-plugin in pom.xml. A blacklist might be good, but you should also consider a whitelist.";
     }
 
     @Override
@@ -108,7 +123,7 @@ public class SSLCipherSuiteTest extends AbstractSSLTest {
         try {
             httpsPort = new Integer(site.getSecureport());
         } catch (NumberFormatException e) {
-            testResult.setPassed(false);
+            testResult.setResultEnum(ResultEnum.failed);
             testResult.setMessage("No HTTPS port specified, test not run!");
             setDuration(testResult, startTime);
             return testResult;
@@ -173,7 +188,7 @@ public class SSLCipherSuiteTest extends AbstractSSLTest {
                             };
 
                             if (checkClient(site, httpsPort, new String[]{"TLSv1"}, ciphers2) == 200) {
-                                testResult.setPassed(true);
+                                testResult.setResultEnum(ResultEnum.passed);
                                 testResult.setMessage("Top score, no weak/anonymous ciphers and supporting the best available Perfect Forward Secrecy ciphers are present.");
                             } else {
                                 exitWrongHttpCode(testResult);
@@ -184,7 +199,7 @@ public class SSLCipherSuiteTest extends AbstractSSLTest {
                         } catch (KeyManagementException e1) {
                             return exitIncorrectCertificate(testResult);
                         } catch (IOException e1) {
-                            testResult.setPassed(false);
+                            testResult.setResultEnum(ResultEnum.partial);
                             testResult.setMessage("Almost there, no weak/anonymous ciphers and allows Perfect Forward Secrecy, but some of your ciphers require DSA keys, which are effectively limited to 1024 bits!");
                             return testResult;
                         }
@@ -197,13 +212,13 @@ public class SSLCipherSuiteTest extends AbstractSSLTest {
                 } catch (KeyManagementException e1) {
                     return exitIncorrectCertificate(testResult);
                 } catch (IOException e1) {
-                    testResult.setPassed(false);
+                    testResult.setResultEnum(ResultEnum.partial);
                     testResult.setMessage("Looking better, your application does not allow SSL/TLS connection with anonymous/weak ciphers, but does not support Perfect Forward Secrecy!");
                     return testResult;
                 }
 
             } else {
-                testResult.setPassed(false);
+                testResult.setResultEnum(ResultEnum.failed);
                 testResult.setMessage("Actual testing failed, check that the connection is working!");
             }
         } finally {
@@ -215,18 +230,18 @@ public class SSLCipherSuiteTest extends AbstractSSLTest {
     }
 
     private void exitWrongHttpCode(TestResult testResult) {
-        testResult.setPassed(false);
+        testResult.setResultEnum(ResultEnum.failed);
         testResult.setMessage("The server did not respond with an HTTP 200 when it should, contact tutor.");
     }
 
     private TestResult exitIncorrectCertificate(TestResult testResult) {
-        testResult.setPassed(false);
+        testResult.setResultEnum(ResultEnum.failed);
         testResult.setMessage("Certificate configuration does not seem to be correct, check certificate on remote environment!");
         return testResult;
     }
 
     private TestResult exitMissingCipherSuites(TestResult testResult) {
-        testResult.setPassed(false);
+        testResult.setResultEnum(ResultEnum.failed);
         testResult.setMessage("Cipher suites used for connection not available in local environment, contact tutor.");
         return testResult;
     }
