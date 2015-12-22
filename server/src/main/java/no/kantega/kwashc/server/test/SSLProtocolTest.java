@@ -19,7 +19,6 @@ package no.kantega.kwashc.server.test;
 import no.kantega.kwashc.server.model.ResultEnum;
 import no.kantega.kwashc.server.model.Site;
 import no.kantega.kwashc.server.model.TestResult;
-import org.apache.http.client.HttpClient;
 
 import javax.net.ssl.SSLHandshakeException;
 import java.security.KeyManagementException;
@@ -86,8 +85,6 @@ public class SSLProtocolTest extends AbstractSSLTest {
             return testResult;
         }
 
-        HttpClient httpclient = HttpClientUtil.getHttpClient();
-
         try {
 
             if (checkClient(site, httpsPort, new String[]{"SSLv3"}, null) == 200) {
@@ -119,7 +116,6 @@ public class SSLProtocolTest extends AbstractSSLTest {
                 testResult.setMessage("Actual testing failed, check that the connection is working!");
             }
         } finally {
-            httpclient.getConnectionManager().shutdown();
             setDuration(testResult, startTime);
         }
 
