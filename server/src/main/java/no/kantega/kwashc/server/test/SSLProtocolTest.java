@@ -91,7 +91,7 @@ public class SSLProtocolTest extends AbstractSSLTest {
         try {
 
             if (checkClient(site, httpsPort, new String[]{"SSLv3"}, null) == 200) {
-                testResult.setPassed(false);
+                testResult.setResultEnum(ResultEnum.failed);
                 testResult.setMessage("Your application accepts an insecure SSL protocol!");
             } else {
                 testResult.setResultEnum(ResultEnum.failed);

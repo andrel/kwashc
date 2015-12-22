@@ -151,7 +151,7 @@ public class SSLCipherSuiteTest extends AbstractSSLTest {
             };
 
             if (checkClient(site, httpsPort, new String[]{"TLSv1"}, ciphers) == 200) {
-                testResult.setPassed(false);
+                testResult.setResultEnum(ResultEnum.failed);
                 testResult.setMessage("Your application accepts weak/anonymous SSL/TLS cipher suites!");
             }
 
